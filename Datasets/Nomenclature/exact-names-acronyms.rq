@@ -1,0 +1,37 @@
+#id: DOq037
+#description: >-
+#  List all possible exact disease names (active diseases only) including
+#  label (preferred name), exact synonym(s), and exact acronym(s); output one
+#  name per line (long format)
+#input: doid.owl
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?id ?name ?type
+WHERE {
+  VALUES ?predicate { rdfs:label oboInOwl:hasExactSynonym }
+  ?class oboInOwl:id ?id ;
+    ?predicate ?name .
+
+  BIND(
+    IF(
+      EXISTS {
+        [] a owl:Axiom ;
+          owl:annotatedSource ?class ;
+          owl:annotatedProperty oboInOwl:hasExactSynonym ;
+          owl:annotatedTarget ?name ;
+          oboInOwl:hasSynonymType obo:OMO_0003012 .
+      },
+      "acronym",
+      IF (
+        ?predicate = rdfs:label,
+        "label",
+        "synonym"
+      )
+    ) AS ?type
+  )
+
+  FILTER NOT EXISTS { ?class owl:deprecated true }
+}
