@@ -1,5 +1,9 @@
-#id: DOq038
-#description: All diseases and their linked data in the DO
+#id: DOq055
+#description: >-
+#  All diseases and their linked data in the DO (limited to 100 results).
+#  This query demonstrates the shape of the data. Returning the entire ontology
+#  as a single table creates extremely redundant data that is too large to be of
+#  practical use.
 #input: doid.owl
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -94,14 +98,15 @@ WHERE {
   # OWL equivalent class logical axiom(s) -- likely to be incomplete
   OPTIONAL {
     ?iri owl:equivalentClass ?eq_placeholder .
-    ?eq_placeholder owl:intersectionOf/(rdf:first|(rdf:rest/rdf:first)+) ?eq_element .
+    ?eq_placeholder (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?eq_element .
     ?eq_element a ?eq_type .
   }
 
   # OWL subclass of logical axiom(s) -- likely to be incomplete
   OPTIONAL {
     ?iri rdfs:subClassOf ?sc_placeholder .
-    ?sc_placeholder owl:intersectionOf / (rdf:first | (rdf:rest/rdf:first)+) ?sc_element .
+    ?sc_placeholder (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?sc_element .
     ?sc_element a ?sc_type .
   }
 }
+LIMIT 100

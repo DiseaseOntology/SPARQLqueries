@@ -1,10 +1,11 @@
-#id: DOq001
+#id: DOq038
 #description: All diseases and their linked data in the DO
 #input: doid.owl
-#superseded_by: DOq038
+#superseded_by: DOq055
 #superseded_reason: >-
-#  Please do not execute this query; the newer query additionally identifies
-#  acronyms.
+#  Please do not execute this query; the newer query includes a limit to prevent
+#  time outs and unusably large data output, as well as, more flexible predicate
+#  paths for logical axioms.
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
@@ -67,6 +68,17 @@ WHERE {
        oboInOwl:hasNarrowSynonym oboInOwl:hasRelatedSynonym
     }
     ?iri ?syn_relation ?synonym .
+
+    # identify acronym(s)
+    BIND(
+      EXISTS {
+        [] a owl:Axiom ;
+          owl:annotatedSource ?iri ;
+          owl:annotatedProperty ?syn_relation ;
+          owl:annotatedTarget ?synonym ;
+          oboInOwl:hasSynonymType obo:OMO_0003012 .
+      } AS ?syn_is_acronym
+    )
   }
 
   # xref(s)
