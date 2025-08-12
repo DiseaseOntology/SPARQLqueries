@@ -1,0 +1,35 @@
+#id: DOq057
+#description: >-
+#  Retrieve cell lines from Cellosaurus associated with an endocrine system
+#  disease
+#input: [doid.owl, https://sparql.cellosaurus.org/sparql/]
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX DOID: <http://purl.obolibrary.org/obo/DOID_>
+PREFIX cello: <https://purl.expasy.org/cellosaurus/rdf/ontology/>
+
+SELECT ?disease_group ?disease_iri ?disease ?cell_line ?cello_accession ?cell_type (GROUP_CONCAT(?xref;SEPARATOR="|") AS ?xref_bridge)
+WHERE {
+    SERVICE <https://sparql.cellosaurus.org/sparql/> {
+        ?cello_accession a ?cell_type ;
+            skos:prefLabel ?cell_line ;
+            cello:derivedFromIndividualWithDisease ?disease_axiom .
+        ?disease_axiom a cello:Disease ;
+            cello:isIdentifiedByIRI ?xref_iri .
+        # format to match DOID xrefs
+        BIND(REPLACE(str(?xref_iri), ".*(NCI|ORDO)[^_]*_(.*)", "$1:$2") AS ?xref)
+    }
+    ?disease_iri rdfs:label ?disease_lang ;
+        oboInOwl:hasDbXref ?xref ;
+        rdfs:subClassOf* ?disease_group_iri .
+    # disease groups = children of DOID:28 (endocrine system disease)
+    ?disease_group_iri rdfs:subClassOf DOID:28 ;
+        rdfs:label ?dg_lang .
+
+    # remove language tags
+    BIND(str(?disease_lang) AS ?disease)
+    BIND(str(?dg_lang) AS ?disease_group)
+}
+GROUP BY ?disease_group ?disease_iri ?disease ?cell_line ?cello_accession ?cell_type
+ORDER BY ?disease_group ?disease ?cell_type ?cell_line
