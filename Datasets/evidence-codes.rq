@@ -1,0 +1,29 @@
+#id: DOq056
+#description: All active diseases and their evidence codes
+#input: doid-merged.owl
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+
+SELECT ?id ?label ?eco_id ?eco_label
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  ?iri a owl:Class ;
+    oboInOwl:id ?id ;
+    rdfs:label ?label ;
+    obo:IAO_0000115 ?definition ;
+    oboInOwl:hasOBONamespace "disease_ontology" .
+
+  # ignore obsolete
+  FILTER NOT EXISTS { ?iri owl:deprecated ?deprecated . }
+
+  [] owl:annotatedSource ?iri ;
+    owl:annotatedProperty obo:IAO_0000115 ;
+    owl:annotatedTarget ?definition ;
+    dc:type ?eco .
+
+  ?eco oboInOwl:id ?eco_id ;
+    rdfs:label ?eco_label .
+}
