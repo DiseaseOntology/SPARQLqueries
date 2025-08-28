@@ -1,0 +1,31 @@
+#id: DOq054
+#description: Retrieve pathways from WikiPathways associated with lipid metabolism disorders
+#input: [doid.owl, https://sparql.wikipathways.org/sparql/]
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX DOID: <http://purl.obolibrary.org/obo/DOID_>
+PREFIX wp: <http://vocabularies.wikipathways.org/wp#>
+
+SELECT DISTINCT ?disease_iri ?disease ?pathway_iri ?pathway ?pathway_description ?pathway_img ?pathway_webpage
+WHERE {
+  SERVICE <https://sparql.wikipathways.org/sparql/> {
+    ?pathway_iri a wp:Pathway ;
+        dc:title ?pathway ;
+        dcterms:description ?pathway_description ;
+        wp:diseaseOntologyTag ?disease_iri ;
+        foaf:page ?pathway_webpage.
+
+    # get png image URLs
+    OPTIONAL {
+        ?pathway_iri foaf:img ?pathway_img .
+        ?pathway_img dcterms:format "image/png" .
+    }
+  }
+
+  ?disease_iri a owl:Class ;
+    rdfs:label ?disease ;
+    rdfs:subClassOf* DOID:3146 .
+}
