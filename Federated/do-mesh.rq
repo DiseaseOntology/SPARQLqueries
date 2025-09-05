@@ -1,0 +1,50 @@
+#id: DOq...
+#description: Identify conflated MeSH terms (child - parent equivalents) using DO
+#input: [doid.owl, http://sparql.uniprot.org/sparql]
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
+PREFIX mesh: <http://id.nlm.nih.gov/mesh/>
+PREFIX mesh2024: <http://id.nlm.nih.gov/mesh/2024/>
+PREFIX mesh2023: <http://id.nlm.nih.gov/mesh/2023/>
+PREFIX mesh2022: <http://id.nlm.nih.gov/mesh/2022/>
+
+SELECT ?mesh ?
+WHERE {
+	SERVICE <http://id.nlm.nih.gov/mesh/sparql> {
+		VALUES ?type { meshv:Descriptor meshv:SCR_Disease }
+		?mesh_iri a ?type ;
+			meshv:preferredConcept ?concept .
+		OPTIONAL { ?mesh_iri meshv:active ?active }
+		BIND(REPLACE(str(?mesh_iri), str(mesh:), "MESH:") AS ?mesh)
+
+		?concept meshv:preferredTerm / meshv:prefLabel ?mesh_label ;
+			(meshv:preferredTerm / meshv:altLabel) | (meshv:term / (meshv:prefLabel | meshv:altLabel)) ?mesh_synonym .
+		
+		BIND(LCASE(?mesh_label) AS ?mlabel)
+		BIND(LCASE(?mesh_synonym) AS ?msynonym)
+	}
+	# need to be able to check all names from mesh against this disease and child/parent
+	# --> return if exact synonym from different DO disease matches (besides xref)
+	# --> return if synonym matches xref but is not exact
+	VALUES ?syn_type {
+		oboInOwl:hasExactSynonym oboInOwl:hasRelatedSynonym
+		oboInOwl:hasBroadSynonym oboInOwl:hasNarrowSynonym
+	}
+	?iri oboInOwl:id ?doid ;
+		rdfs:label ?do_label ;
+		oboInOwl:hasDbXref ?mesh .
+
+	OPTIONAL {
+		?iri ?syn_type ?do_synonym .
+
+	BIND(LCASE(?do_synonym) AS ?synonym)
+	BIND(LCASE(?
+	FILTER(?syn_type != oboInOwl:hasExactSynonym)
+	OPTIONAL {
+		?child rdfs:subClassOf ?iri ;
+	OPTIONAL { ?iri owl:deprecated ?do_deprecated . }
+
+}
