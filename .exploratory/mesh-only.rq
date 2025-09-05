@@ -1,0 +1,22 @@
+#a sparql query to only MeSH that works when directed at the DO endpoint
+
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
+PREFIX mesh: <http://id.nlm.nih.gov/mesh/>
+
+SELECT ?subject_id ?subject_label ?predicate ?object_id ?object_label
+	?replace_object ?replace_label ?subject_source_version ?object_source_version
+WHERE {
+	SERVICE <http://id.nlm.nih.gov/mesh/sparql> {
+		?mesh meshv:active false ;
+			meshv:lastActiveYear ?object_source_version ;
+			# All MeSH topical descriptors & SCR diseases have a preferred
+			#	concept & label
+			meshv:preferredConcept ?concept ;
+			rdfs:label ?object_label .
+	}
+}
+LIMIT 10
