@@ -1,0 +1,19 @@
+# Find ALL nearest common ancestors
+# Flex: Replacement classes (up to 3) = @child1, @child2, @child3; 
+# NOTE:
+#  To speed up replace * with + in
+#  `?mid ^rdfs:subClassOf*  @child1, @child2, @child3 .`; caveat: ancestor will
+#  be one above common ancestor IF the common ancestor is in the set specified
+#  (i.e. @child1, @child2, @child3)
+PREFIX example: <http://example.org/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+# find distance to common ancestors
+SELECT ?ancestor_iri (COUNT(?mid) AS ?pathdist)
+WHERE {
+  ?ancestor_iri ^rdfs:subClassOf* ?mid .
+  ?mid ^rdfs:subClassOf* @child1, @child2, @child3 .
+  FILTER(!isBlank(?ancestor_iri))
+}
+GROUP BY ?ancestor_iri

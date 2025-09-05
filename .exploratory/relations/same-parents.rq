@@ -1,0 +1,12 @@
+# Returns all pairs of classes that have the same two parents
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT DISTINCT ?iri1 ?iri2 ?parent1 ?parent2
+WHERE {
+	?iri1 rdfs:subClassOf ?parent1, ?parent2 .
+	?iri2 rdfs:subClassOf ?parent1, ?parent2 .
+
+	FILTER(?parent1 != ?parent2 && ?iri1 != ?iri2)
+}
