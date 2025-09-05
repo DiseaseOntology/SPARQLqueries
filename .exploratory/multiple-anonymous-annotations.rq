@@ -1,0 +1,42 @@
+#Identify all triples annotated with multiple, different anonymous owl:Axiom's
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+SELECT ?entity ?property ?value ?blank ?pred ?obj
+WHERE {
+	{
+		SELECT ?entity ?property ?value (COUNT(DISTINCT ?blank) AS ?cnt)
+		WHERE {
+			?entity ?property ?value .
+
+			?blank a owl:Axiom ;
+				owl:annotatedSource ?entity ;
+				owl:annotatedProperty ?property ;
+				owl:annotatedTarget ?value ;
+				?pred ?obj .
+
+			BIND(CONCAT(str(?pred), "-", str(?obj)) AS ?annotation)
+
+			FILTER(!isBlank(?entity))
+			FILTER NOT EXISTS { ?entity owl:deprecated true }
+		}
+		GROUP BY ?entity ?property ?value
+		HAVING(?cnt > 1)
+	}
+	?entity ?property ?value .
+
+	?blank a owl:Axiom ;
+		owl:annotatedSource ?entity ;
+		owl:annotatedProperty ?property ;
+		owl:annotatedTarget ?value ;
+		?pred ?obj .
+
+	FILTER(
+		?pred NOT IN (
+			owl:annotatedSource, owl:annotatedProperty, owl:annotatedTarget,
+			rdf:type
+		)
+	)
+	FILTER(!isBlank(?entity))
+	FILTER NOT EXISTS { ?entity owl:deprecated true }
+}
