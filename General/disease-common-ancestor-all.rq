@@ -1,0 +1,55 @@
+##### THIS IS INCOMPLETE!!!! #####
+# I'm not sure how this differs from the other common ancestor queries
+
+
+#id: DOq...
+#description: >-
+#  Show ID and label of the nearest common disease ancestor of multiple
+#  diseases. Example uses appendicitis (DOID:8337), alcoholic gastritis
+#  (DOID:8680), and viral esophagitis (DOID:6297)
+#input: doid.owl
+#comment: >-
+#  SPARQL is not optimized for this type of query, making the nested SELECT
+#  statements necessary (each has a description)
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX DOID: <http://purl.obolibrary.org/obo/DOID_>
+
+SELECT ?ancestor_id ?ancestor_label ?distance ?mindist
+WHERE {
+	{
+		# find all of the nearest common ancestor (e.g. with minimum path distance)
+		SELECT ?ancestor_iri ?mindist (COUNT(?mid) AS ?distance)
+		WHERE {
+			{
+				# identify the overall minimum path distance (not cumulative minimum
+				#   distance from each disease); IRIs & pathdistances are lost here
+				SELECT (MIN(?pathdist) AS ?mindist)
+				WHERE {
+					{
+						# find all common ancestors, with path distance from each disease
+						SELECT ?ancestor_iri (COUNT(?mid) AS ?pathdist)
+						WHERE {
+							?ancestor_iri ^rdfs:subClassOf* ?mid .
+							# NOTE: use + instead of * to speed up; caveat: ancestor will be one
+							#   above common ancestor IF the common ancestor is in the set
+							?mid ^rdfs:subClassOf* DOID:8337, DOID:8680, DOID:6297 .
+							FILTER(!isBlank(?ancestor_iri))
+						}
+						GROUP BY ?ancestor_iri
+					}
+				}
+			}
+			?ancestor_iri ^rdfs:subClassOf* ?mid .
+			# NOTE: use + instead of * to speed up; caveat: ancestor will be one
+			#   above common ancestor IF the common ancestor is in the set
+			?mid ^rdfs:subClassOf* DOID:8337, DOID:8680, DOID:6297 .
+			FILTER(!isBlank(?ancestor_iri))
+		}
+		GROUP BY ?ancestor_iri ?mindist
+		HAVING(?distance = ?mindist)
+	}
+
+	?ancestor_iri  oboInOwl:id ?ancestor_id ;
+		rdfs:label ?ancestor_label .
+}

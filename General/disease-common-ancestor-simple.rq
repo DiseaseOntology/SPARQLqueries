@@ -1,0 +1,37 @@
+##### THIS IS INCOMPLETE!!!! #####
+# it doesn't necessarily find the nearest common ancestor; it finds a common
+# ancestor and then excludes its parents; there is no current calculation that
+# identifies the actual shortest path (should that be cumulative for all
+# diseases, or just the shortest single path from one disease to the ancestor?)
+
+#id: DOq...
+#description: >-
+#  Show ID and label of the nearest common disease ancestor of multiple
+#  diseases. Example uses appendicitis (DOID:8337), alcoholic gastritis
+#  (DOID:8680), and viral esophagitis (DOID:6297)
+#input: doid.owl
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX DOID: <http://purl.obolibrary.org/obo/DOID_>
+
+SELECT ?ancestor_id ?ancestor_label
+WHERE {
+	{
+		# find the nearest common ancestor
+		SELECT ?ancestor_iri (COUNT(?mid) AS ?distance)
+		WHERE {
+			?ancestor_iri ^rdfs:subClassOf* ?mid .
+			# NOTE: use + instead of * to speed up; caveat: ancestor will be one
+			#   above actual common ancestor IF the common ancestor is one of the
+			#   input diseases
+			?mid ^rdfs:subClassOf* DOID:8337, DOID:8680, DOID:6297 .
+			FILTER(!isBlank(?ancestor_iri))
+		}
+		GROUP BY ?ancestor_iri
+		ORDER BY ?distance
+		LIMIT 1
+	}
+
+	?ancestor_iri  oboInOwl:id ?ancestor_id ;
+		rdfs:label ?ancestor_label .
+}
