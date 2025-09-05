@@ -1,0 +1,71 @@
+#id: DOq037
+#description: >-
+#  Identify MeSH xrefs in the DO that are not active, and suggest replacements
+#  when possible
+#input: [doid.owl, https://id.nlm.nih.gov/mesh/sparql]
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
+PREFIX mesh: <http://id.nlm.nih.gov/mesh/>
+
+SELECT ?subject_id ?subject_label ?predicate ?object_id ?object_label
+	?replace_object ?replace_label ?subject_source_version ?object_source_version
+WHERE {
+	VALUES (?predicate ?mapping_type) {
+		("oboInOwl:hasDbXref" oboInOwl:hasDbXref)
+		("skos:exactMatch" skos:exactMatch)
+		("skos:closeMatch" skos:closeMatch)
+		("skos:relatedMatch" skos:relatedMatch)
+		("skos:broadMatch" skos:broadMatch)
+		("skos:narrowMatch" skos:narrowMatch)
+	}
+
+	?iri oboInOwl:id ?subject_id ;
+		rdfs:label ?subject_label ;
+		?mapping_type ?mapping .
+	FILTER(REGEX(str(?mapping), "mesh", "i"))
+
+	BIND(
+		IF(
+			isURI(?mapping),
+			?mapping,
+			IRI(CONCAT(str(mesh:), STRAFTER(?mapping, ":")))
+		) AS ?mesh
+	)
+
+	# Output MeSH IDs as CURIEs
+	BIND(
+		IF(
+			!isURI(?mapping),
+			?mapping,
+			CONCAT("MESH:", STRAFTER(?mapping, ":"))
+		) AS ?object_id
+	)
+
+	# Get the source version of the DO
+	[] owl:versionIRI ?src_version_iri .
+	BIND(
+		REPLACE(str(?src_version_iri), ".*doid/releases/([^/]+)/.*", "$1")
+		AS ?subject_source_version
+	)
+
+	SERVICE <http://id.nlm.nih.gov/mesh/sparql> {
+		?mesh meshv:active false ;
+			meshv:lastActiveYear ?object_source_version ;
+			# All MeSH topical descriptors & SCR diseases have a preferred
+			#	concept & label
+			meshv:preferredConcept ?concept ;
+			rdfs:label ?object_label .
+
+		# Get the replacement MeSH term, if available
+		OPTIONAL {
+			?replace meshv:preferredConcept ?concept ;
+				meshv:active true ;
+				rdfs:label ?replace_label .
+			# Output MeSH IDs as CURIEs
+			BIND(REPLACE(str(?replace), str(mesh:), "MESH:") AS ?replace_object)
+		}
+	}
+}
