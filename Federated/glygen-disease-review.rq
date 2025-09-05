@@ -1,0 +1,37 @@
+#id: DOq058
+#description: >-
+#  List all DO diseases in the GlyGen ontology and check for corresponding info
+#  in the Disease Ontology
+#input: [ doid.owl, http://sparql.glygen.org:8880/sparql ]
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX glygen: <https://sparql.glygen.org/ontology/>
+
+SELECT DISTINCT ?iri ?doid ?label ?glygen_label ?label_mismatch 
+WHERE {
+  SERVICE <http://sparql.glygen.org:8880/sparql> {
+    # doid_dash (e.g. <DOID-4>) may be derived from Reactome; these are not
+    #   canonical DO IRIs and should NOT be used elsewhere
+    ?doid_dash a glygen:Disease_Ontology ;
+      glygen:doName ?glygen_label .
+    BIND(REPLACE(str(?doid_dash), "-", ":") AS ?doid)
+  }
+  
+  OPTIONAL{
+    ?iri oboInOwl:id ?doid ;
+      rdfs:label ?label_en .
+    
+    # accomodate lang tags
+    FILTER(langMatches(lang(?label_en), "en") || lang(?label_en) = "")
+    BIND(str(?label_en) AS ?label)
+  }
+
+  # check if labels are the same
+  BIND(
+    IF(
+      Bound(?label),
+      ?label != ?glygen_label,
+      false
+    ) AS ?label_mismatch
+  )
+}
