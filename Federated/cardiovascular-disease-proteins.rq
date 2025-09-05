@@ -1,0 +1,34 @@
+#id: DOq...
+#description: Map diseases in DO and UniProt using matching cross-references
+#input: [doid.owl, http://sparql.uniprot.org/sparql]
+#note: >-
+#  Assumes all xrefs in DO & UniProt are exact matches (likely not true).
+#  UniProt appears to have a looser philosophy with rdfs:seeAlso, particularly
+#  to diseases in MeSH, and those cross-reference bridges may be inaccurate.
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX up: <http://purl.uniprot.org/core/>
+
+SELECT ?up_disease ?up_label (GROUP_CONCAT(?xref; separator="|") AS ?xrefs)
+  ?doid ?do_label ?do_deprecated
+WHERE {
+  SERVICE <http://sparql.uniprot.org/sparql> {
+    ?up_disease a up:Disease ;
+      skos:prefLabel ?up_label ;
+      rdfs:seeAlso ?xref_iri .
+    FILTER(!CONTAINS(str(?xref_iri), "keyword"))
+    BIND(
+      CONCAT(
+        UCASE(REPLACE(str(?xref_iri), "^.*/([^/]+)/.+$", "$1:")),
+        REPLACE(str(?xref_iri), "^.*/(.+)$", "$1")
+      ) AS ?xref
+    )
+  }
+  ?iri oboInOwl:id ?doid ;
+    rdfs:label ?do_label ;
+    oboInOwl:hasDbXref ?xref .
+  OPTIONAL { ?iri owl:deprecated ?do_deprecated . }
+}
+GROUP BY ?up_disease ?up_label ?doid ?do_label ?do_deprecated
