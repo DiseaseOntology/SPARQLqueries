@@ -2,7 +2,7 @@
 #description: List all synonyms with their relationship (active diseases only)
 #input: doid.owl
 #superseded_by: DOq039
-#superseded_reason: Newer identifies acronyms
+#superseded_reason: The newer query additionally identifies acronyms
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
 PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>

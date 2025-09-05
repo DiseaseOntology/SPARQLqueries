@@ -3,9 +3,9 @@
 #input: doid.owl
 #superseded_by: DOq055
 #superseded_reason: >-
-#  Please do not execute this query; the newer query includes a limit to prevent
-#  time outs and unusably large data output, as well as, more flexible predicate
-#  paths for logical axioms.
+#  The newer query includes more flexible predicate paths to capture logical
+#  axioms more completely, as well as, a LIMIT to prevent time outs and unusably
+#  large data output (due to significant data duplication)
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
