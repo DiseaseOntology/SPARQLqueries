@@ -1,0 +1,42 @@
+#All diseases in the GlyGen ontology and the reactions they are linked to
+PREFIX glygen: <https://sparql.glygen.org/ontology/>
+PREFIX up: <http://purl.uniprot.org/core/>
+# PREFIX DOID: <DOID->
+
+###### VARYING EXPLORATION #####
+SELECT DISTINCT *
+WHERE {
+  SERVICE <http://sparql.glygen.org:8880/sparql> {
+    ### GENERAL INFO ###
+    ?s  ?p ?o .
+    FILTER(CONTAINS(str(?s), "DOID"))
+
+    ### SPECIFIC DISEASE INFO ###
+    # OPTIONAL { <DOID-10534> ?p ?y }
+    # OPTIONAL { ?x ?p1 <DOID-10534> }
+
+    # ?doid_dash a glygen:Disease_Ontology .
+    # BIND(datatype(?doid_dash) AS ?dt)
+    # ?s1 ?p1 [ ?p ?doid_dash ] .
+    # FILTER(CONTAINS(str(?doid_dash), "10534"))
+    # VALUES ?iri { IRI(<DOID-2752>) }
+
+    ### EXPLORE PATHS ###
+    # ?x (<>|!<>)* ?doid_dash .
+    # ?x ?p ?y .
+    # ?y (<>|!<>)* up:Glycosylation_Annotation .
+  }
+}
+LIMIT 10
+
+##### ALTERNATE QUERY #####
+# SELECT ?doid ?disease ?reaction
+# WHERE {
+#   SERVICE <http://sparql.glygen.org:8880/sparql> {
+#     ?doid_dash a glygen:Disease_Ontology ;
+#     glygen:doName ?disease .
+#   ?reaction a glygen:Reaction_Annotation ;
+#     glygen:rxnDisease ?doid_dash .
+#   BIND(REPLACE(str(?doid_dash), "-", ":") AS ?doid)
+#   }
+# }
