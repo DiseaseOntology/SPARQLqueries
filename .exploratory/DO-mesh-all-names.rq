@@ -1,0 +1,22 @@
+# This query retrieves all disease names (labels & synonyms), in standard &
+# lowercase for diseases with MeSH cross-references.
+# --> NOT SURE OF ITS ORIGINAL USE
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?doid ?nm_type ?nm ?nm_lc ?mesh ?do_deprecated
+WHERE {
+	VALUES ?nm_type { 
+		rdfs:label
+		oboInOwl:hasExactSynonym oboInOwl:hasRelatedSynonym
+		oboInOwl:hasBroadSynonym oboInOwl:hasNarrowSynonym
+	}
+	?iri oboInOwl:id ?doid ;
+		?nm_type ?nm ;
+		oboInOwl:hasDbXref ?mesh .
+
+	BIND(LCASE(?nm) AS ?nm_lc)
+	FILTER(CONTAINS(?mesh, "MESH"))
+	OPTIONAL { ?iri owl:deprecated ?do_deprecated . }
+}
