@@ -1,16 +1,20 @@
 #id: DOq052
 #description: >-
-#  Count of language tags used for class annotations, by class namespace and
-#  annotation property
+#  Count of language tags used for class annotations, by abbreviated class
+#  namespace and annotation property
 #input: []
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
 
-SELECT DISTINCT ?type
+SELECT DISTINCT ?namespace ?annotation ?lang (COUNT(?literal) AS ?count)
 WHERE {
   ?iri a owl:Class ;
     ?annotation ?literal .
   ?annotation a owl:AnnotationProperty .
-  FILTER(isLiteral(?literal))
+  FILTER(datatype(?literal) IN (xsd:string, rdf:langString))
   BIND(LANG(?literal) AS ?lang)
   BIND(REPLACE(str(?iri), ".*/([^#_]+).*", "$1") AS ?namespace)
 }
+GROUP BY ?namespace ?annotation ?lang
+ORDER BY ?namespace ?annotation ?lang
