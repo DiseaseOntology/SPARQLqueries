@@ -21,12 +21,12 @@ Additional fields may also be included.
 
 **All DOq Numeric IDs** (with count)
 ```
-grep -REh "[# ]id:" * .superseded/ | grep -Eo "DOq[0-9]{3}" | sort --reverse | uniq -c
+find . -name "*.rq" -exec grep -Eh "[# ]id:" {} + | sort --reverse | uniq -c
 ```
 
 **Duplicated DOq IDs**
 ```
-grep -REh "[# ]id:" * .superseded/ | sort --reverse | uniq -c | grep -E "[^1] [# ]id:"
+find . -name "*.rq" -exec grep -Eh "[# ]id:" {} + | sort --reverse | uniq -c | grep -E "[^1] [# ]id:"
 ```
 
 </details>
