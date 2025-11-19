@@ -1,0 +1,62 @@
+#id: DOq061
+#description: >-
+#  All diseases with both a genetic and non-genetic contributor, driver, etc.
+#input: doid-merged.owl
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?iri ?label ?non_gen_iri ?non_gen_label ?gen_id ?gen_label ?gen_type
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  {
+    # genetic contributors to disease
+    SELECT ?iri ?gen_id ?gen_label ?gen_type
+    WHERE {
+      {
+        # OMIM genetic susceptibilities
+        ?iri a owl:Class ;
+          owl:equivalentClass|rdfs:subClassOf ?susc_anon .
+        FILTER(CONTAINS(str(?iri), "DOID"))
+
+        ?susc_anon (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?gen_iri .
+
+        ?gen_iri rdfs:label ?gen_label ;
+          rdfs:subClassOf* obo:MIM_000000 .
+        BIND(REPLACE(str(?gen_iri), "^.*MIM_", "MIM:") AS ?gen_id)
+        BIND("susceptibility" AS ?gen_type)
+      }
+      UNION
+      {
+        # OMIM mappings may substitute for genetic causes; indirect mappings
+        # excluded to avoid ambiguity (i.e. SKOS: broad, narrow, related)
+        VALUES ?mapping_predicate {
+          oboInOwl:hasDbXref skos:exactMatch skos:closeMatch
+        }
+        ?iri a owl:Class ;
+          ?mapping_predicate ?gen_id .
+        FILTER(CONTAINS(str(?iri), "DOID"))
+        FILTER(REGEX(str(?gen_id), "^MIM:[0-9]+$")) # exclude phenotypic series
+        BIND("contributor" AS ?gen_type)
+      }
+    }
+  }
+
+  ?iri rdfs:label ?label ;
+    owl:equivalentClass|rdfs:subClassOf ?non_gen_anon .
+
+  # # OWL logical axiom(s) with non-genetic contributors to disease
+  ?non_gen_anon (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?non_gen_iri .
+
+  VALUES ?non_gen_root {
+    obo:DISDRIV_0000000 # disease driver
+    obo:CHEBI_24431     # chemical entity
+    obo:FOODON_00002403 # food material
+    obo:NCBITaxon_1     # ncbitaxon root
+  }
+  ?non_gen_iri rdfs:label ?non_gen_label ;
+    rdfs:subClassOf* ?non_gen_root .
+}

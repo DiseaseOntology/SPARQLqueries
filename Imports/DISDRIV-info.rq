@@ -1,0 +1,31 @@
+#id: DOq103
+#description: All disease drivers imported from DISDRIV
+#input: doid-merged.owl
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?iri ?label ?definition (GROUP_CONCAT(?parent;separator="|") AS ?parents)
+  ?deprecated ?replaced_by
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  ?iri a owl:Class ;
+    oboInOwl:id ?id ;
+    rdfs:label ?label ;
+    rdfs:subClassOf* obo:DISDRIV_0000000 .
+
+  OPTIONAL { ?iri obo:IAO_0000115 ?definition }
+
+  # only parents that are direct descendants of 'disease driver' root
+  OPTIONAL {
+    ?iri rdfs:subClassOf ?parent .
+    ?parent rdfs:subClassOf* obo:DISDRIV_0000000 .
+    FILTER(!isBlank(?parent))
+  }
+
+  OPTIONAL { ?iri owl:deprecated ?deprecated }
+
+  OPTIONAL { ?iri obo:IAO_0100001 ?replaced_by }
+}
+GROUP BY ?iri ?label ?definition ?deprecated ?replaced_by

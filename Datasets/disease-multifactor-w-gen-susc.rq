@@ -1,0 +1,36 @@
+#id: DOq060
+#description: >-
+#  All diseases with a non-genetic contributor and genetic susceptibility
+#input: doid-merged.owl
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?iri ?label ?non_gen_iri ?non_gen_label ?susc_iri ?susc_label
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  ?iri a owl:Class ;
+    rdfs:label ?label ;
+    owl:equivalentClass|rdfs:subClassOf ?non_gen_anon, ?susc_anon ;
+    rdfs:subClassOf* obo:DOID_4 .
+
+  # OWL subclass of logical axiom(s) indicating contribution to disease
+  ?non_gen_anon (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?non_gen_iri .
+  ?susc_anon (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?susc_iri .
+
+  # Include all possible sources of environmental drivers, since not all are in
+  # DISDRIV yet
+  VALUES ?non_gen_root {
+    obo:DISDRIV_0000000 # disease driver
+    obo:CHEBI_24431     # chemical entity
+    obo:FOODON_00002403 # food material
+    obo:NCBITaxon_1     # ncbitaxon root
+  }
+  ?non_gen_iri rdfs:label ?non_gen_label ;
+    rdfs:subClassOf* ?non_gen_root .
+
+  ?susc_iri rdfs:label ?susc_label ;
+    rdfs:subClassOf* obo:MIM_000000 .
+}

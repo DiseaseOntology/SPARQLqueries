@@ -1,0 +1,36 @@
+#id: DOq102
+#description: >-
+#  All genetic susceptibility entities (from omim_susc_import.owl) with their
+#  linked diseases in DO
+#input: doid-merged.owl
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?iri ?label ?parent ?contributes_to ?disease_label ?deprecated ?replaced_by
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  ?iri a owl:Class ;
+    rdfs:label ?label ;
+    rdfs:subClassOf* obo:MIM_000000 .
+
+  OPTIONAL {
+    ?iri rdfs:subClassOf ?parent .
+    FILTER(!isBlank(?parent))
+  }
+
+  # OWL subclass of logical axiom(s) indicating contribution to disease
+  OPTIONAL {
+    ?iri rdfs:subClassOf ?sc_placeholder .
+    ?sc_placeholder (owl:intersectionOf|owl:unionOf|owl:Restriction|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?do_iri .
+    ?do_iri oboInOwl:id ?contributes_to ;
+      rdfs:label ?disease_label .
+    FILTER(CONTAINS(str(?do_iri), "DOID"))
+  }
+
+  OPTIONAL { ?iri owl:deprecated ?deprecated . }
+
+  OPTIONAL { ?iri obo:IAO_0100001 ?replaced_by . }
+}
