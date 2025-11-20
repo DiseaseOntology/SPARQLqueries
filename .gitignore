@@ -1,0 +1,6 @@
+# Ignore query inputs/outputs from testing
+*.zip
+*.owl
+*.obo
+*.tsv
+*.csv
