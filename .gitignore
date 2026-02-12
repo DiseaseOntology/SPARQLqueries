@@ -4,3 +4,6 @@
 *.obo
 *.tsv
 *.csv
+
+# Ignore Mac files
+.DS_Store
