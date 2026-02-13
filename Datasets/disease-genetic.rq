@@ -30,7 +30,7 @@ WHERE {
     ?geno_iri rdfs:subClassOf* GENO:0000141 ;  # 'inheritance pattern'
       rdfs:label ?geno_label .
     BIND(
-      REPLACE(str(?geno_iri), ".*/([^_]+_(\\d+))", "$1:$2") AS ?geno_id
+      REPLACE(str(?geno_iri), ".*/([^_]+)_(\\d+)", "$1:$2") AS ?geno_id
     )
   }
 }
