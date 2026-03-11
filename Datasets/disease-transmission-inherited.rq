@@ -1,0 +1,69 @@
+#id: DOq064
+#description: >-
+#  All diseases in the 'disease by infectious agent' branch with their closest
+#  inherited, logically-related infectious agents (NCBITaxon), transmission
+#  processes (TRANS), and living transmission vectors (NCBITaxon)
+#input: doid-merged.owl
+#comment: This query approximates using an OWL reasoner, but cannot replace them
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?id ?label ?type ?import_iri ?import_label ?prop_iri ?prop_label ?source
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  # get infectious disease identifying data
+  ?iri a owl:Class ;
+    oboInOwl:id ?id ;
+    rdfs:label ?label ;
+    rdfs:subClassOf* obo:DOID_0050117 . # disease by infectious agent
+
+  # define ?type of relation
+  OPTIONAL {
+    VALUES (?prop_iri ?source_iri ?type) {
+      (
+        obo:RO_0002451    # transmitted by
+        obo:TRANS_0000000 # transmission process
+        "transmission_process"
+      )
+      (
+        obo:IDO_0000664   # has material basis in
+        obo:NCBITaxon_1   # NCBITaxon's 'root' ('ncbitaxon' in DO)
+        "infectious_agent"
+      )
+      (
+        obo:RO_0002451
+        obo:NCBITaxon_1
+        "transmitted_by"
+      )
+    }
+
+    # find an ancestor (or self) with the relevant axiom
+    ?iri rdfs:subClassOf* ?intermediate .
+    ?intermediate (owl:equivalentClass|rdfs:subClassOf)/
+                  (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest)* ?restriction .
+    ?restriction a owl:Restriction ;
+      owl:onProperty ?prop_iri ;
+      (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?import_iri .
+    ?import_iri rdfs:subClassOf* ?source_iri .
+
+    # keep only the nearest: exclude ?intermediate if a strictly closer ancestor
+    # also has the same axiom for the same prop_iri-source_iri pair
+    FILTER NOT EXISTS {
+      ?iri rdfs:subClassOf* ?closer .
+      ?closer rdfs:subClassOf+ ?intermediate .
+      ?closer (owl:equivalentClass|rdfs:subClassOf)/
+              (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest)* ?closer_restriction .
+      ?closer_restriction a owl:Restriction ;
+        owl:onProperty ?prop_iri ;
+        (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?closer_import .
+      ?closer_import rdfs:subClassOf* ?source_iri .
+    }
+
+    ?import_iri rdfs:label ?import_label .
+    ?prop_iri rdfs:label ?prop_label .
+    ?source_iri rdfs:label ?source .
+  }
+}
