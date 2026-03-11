@@ -1,0 +1,54 @@
+#id: DOq062
+#description: >-
+#  All diseases in the 'disease by infectious agent' branch with their direct,
+#  logically asserted infectious agents (NCBITaxon), transmission processes
+#  (TRANS), and living transmission vectors (NCBITaxon)
+#input: doid-merged.owl
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?id ?label ?type ?import_iri ?import_label ?prop_iri ?prop_label ?source
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  # get infectious diseases
+  ?iri a owl:Class ;
+    oboInOwl:id ?id ;
+    rdfs:label ?label ;
+    rdfs:subClassOf* obo:DOID_0050117 . # disease by infectious agent
+
+  OPTIONAL {
+    # define ?type of relation
+    VALUES (?prop_iri ?source_iri ?type) { 
+      (
+        obo:RO_0002451    # transmitted by
+        obo:TRANS_0000000 # transmission process
+        "transmission_process"
+      )
+
+      (
+        obo:IDO_0000664   # has material basis in
+        obo:NCBITaxon_1   # NCBITaxon's 'root' ('ncbitaxon' in DO)
+        "infectious_agent"
+      )
+
+      (
+        obo:RO_0002451
+        obo:NCBITaxon_1
+        "transmitted_by"
+      )
+    }
+
+    ?iri (owl:equivalentClass|rdfs:subClassOf)/(owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest)* ?restriction .
+    ?restriction a owl:Restriction ;
+      owl:onProperty ?prop_iri ;
+      (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?import_iri .
+    
+    ?import_iri rdfs:label ?import_label ;
+      rdfs:subClassOf* ?source_iri .
+    ?prop_iri rdfs:label ?prop_label .
+    ?source_iri rdfs:label ?source .
+  }
+}
