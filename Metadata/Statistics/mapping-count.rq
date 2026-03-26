@@ -1,0 +1,24 @@
+#id: DOq065
+#description: Count of mappings in the DO by predicate (active diseases only)
+#input: doid.owl
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?predicate (COUNT(?mapping) AS ?count)
+WHERE {
+	VALUES ?predicate {
+		oboInOwl:hasDbXref
+		skos:exactMatch
+		skos:closeMatch
+		skos:broadMatch
+		skos:narrowMatch
+		skos:relatedMatch
+	}
+
+  ?iri ?predicate ?mapping .
+
+	FILTER(CONTAINS(str(?iri), "DOID_"))
+  FILTER NOT EXISTS { ?iri owl:deprecated true }
+}
+GROUP BY ?predicate
