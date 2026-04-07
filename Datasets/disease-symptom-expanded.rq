@@ -1,0 +1,47 @@
+#id: DOq066
+#description: >-
+#  All diseases with their labels, definitions, and related symptoms (SYMP),
+#  where they exist. Symptoms are derived from direct axioms on the disease and
+#  from broader, related diseases.
+#input: doid-merged.owl
+#comment: >-
+#  This query somewhat approximates using an OWL reasoner, but is NOT guaranteed
+#  to capture all symptom-disease relations that an OWL reasoner would.
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+
+SELECT DISTINCT ?id ?label ?definition ?symp_id ?symp_label ?symp_origin
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  # get disease identifying data
+  ?iri a owl:Class ;
+    rdfs:label ?label .
+  OPTIONAL { ?iri obo:IAO_0000115 ?definition }
+  FILTER NOT EXISTS { ?iri owl:deprecated true }
+  FILTER(CONTAINS(str(?iri), "DOID_"))
+
+  # identify directly asserted symptoms and those asserted from broader diseases
+  OPTIONAL {
+    SELECT DISTINCT ?iri ?symp_iri ?symp_label
+      (IF(MIN(?symp_rank) = 0, "on-disease", "from-broader-disease" ) AS ?symp_origin)
+    WHERE {
+      ?iri rdfs:subClassOf* ?intermediate .
+      ?intermediate (owl:equivalentClass|rdfs:subClassOf)/
+          (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest)* ?restriction .
+      ?restriction a owl:Restriction ;
+        owl:onProperty obo:RO_0002452 ; # has symptom
+        (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?symp_iri .
+
+      ?symp_iri rdfs:label ?symp_label .
+      BIND(IF(?iri = ?intermediate, 0, 1) AS ?symp_rank)
+    }
+    GROUP BY ?iri ?symp_iri ?symp_label
+  }
+
+  # convert IRIs to CURIEs for easier reading
+  BIND(REPLACE(str(?iri), "^.*DOID_", "DOID:") AS ?id)
+  BIND(REPLACE(str(?symp_iri), "^.*SYMP_", "SYMP:") AS ?symp_id)
+}
+ORDER BY ?label ?symp_origin ?symp_label
