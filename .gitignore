@@ -1,9 +1,12 @@
-# Ignore query inputs/outputs from testing
+# query inputs/outputs (for testing only)
 *.zip
 *.owl
 *.obo
 *.tsv
 *.csv
 
-# Ignore Mac files
+# temp folders (start with _)
+_*/
+
+# Mac files
 .DS_Store
