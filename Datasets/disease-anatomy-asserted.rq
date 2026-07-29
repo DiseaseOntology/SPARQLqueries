@@ -1,0 +1,35 @@
+#id: DOq068
+#description: >-
+#  Diseases with their direct, logically asserted 'disease has location'-related
+#  anatomy (e.g. UBERON, CL)
+#input: doid-merged.owl
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
+
+SELECT ?iri ?label ?import_iri ?import_label
+FROM <http://purl.obolibrary.org/obo/doid/doid-merged.owl>
+WHERE {
+  ?iri a owl:Class ;
+    rdfs:label ?label_lang ;
+    rdfs:subClassOf* obo:DOID_4 ; # disease
+    (owl:equivalentClass|rdfs:subClassOf)/(owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest)* ?restriction .
+
+  ?restriction a owl:Restriction ;
+    owl:onProperty obo:RO_0004026 ; # disease has location
+    (owl:intersectionOf|owl:unionOf|rdf:first|rdf:rest|owl:someValuesFrom|owl:onClass)* ?import_iri .
+    
+  ?import_iri rdfs:label ?import_label_lang .
+
+  # language handling
+  FILTER(lang(?label_lang) = "" || langMatches(lang(?label_lang), "en"))
+  BIND(str(?label_lang) AS ?label)
+  FILTER(
+    lang(?import_label_lang) = "" ||
+      langMatches(lang(?import_label_lang), "en")
+  )
+  BIND(str(?import_label_lang) AS ?import_label)
+}
+ORDER BY ?label ?import_label
